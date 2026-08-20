@@ -1,0 +1,52 @@
+@page "/login"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudCard Elevation="3">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center">Login</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                <MudTextField @bind-Value="loginModel.Email" Label="Email" Variant="Variant.Outlined" Required="true" Class="mb-3"/>
+                <MudTextField @bind-Value="loginModel.Password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" Required="true" Class="mb-3"/>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudText Color="Color.Error" Class="mb-3">@errorMessage</MudText>
+                }
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Login</MudButton>
+            </EditForm>
+        </MudCardContent>
+        <MudCardActions Class="d-flex justify-center pb-4">
+            <MudLink Href="/register">Don't have an account? Register</MudLink>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private LoginDto loginModel = new();
+    private string errorMessage = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        errorMessage = string.Empty;
+        var response = await Http.PostAsJsonAsync("Auth/login", loginModel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var authResult = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", authResult!.Token);
+            ((AIInterviewCoach.UI.Auth.CustomAuthStateProvider)AuthStateProvider).NotifyUserAuthentication(authResult.Token);
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = "Invalid email or password.";
+        }
+    }
+}

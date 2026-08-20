@@ -1,0 +1,85 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="ml-3">AI Interview Coach</MudText>
+        <MudSpacer />
+        
+        <AuthorizeView>
+            <Authorized>
+                <MudText Class="mr-4">Hi, @context.User.Identity?.Name!</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="Logout">Logout</MudButton>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/login">Login</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Inherit" Href="/register" Class="ml-2 mr-4">Register</MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
+
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
+                       Color="Color.Inherit" OnClick="@ToggleDarkMode" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
+        <MudNavMenu>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+            <MudNavLink Href="jobroles" Icon="@Icons.Material.Filled.Work">Job Roles</MudNavLink>
+            <MudNavLink Href="interviews" Icon="@Icons.Material.Filled.VideoCall">My Interviews</MudNavLink>
+            <MudNavLink Href="test-audio" Icon="@Icons.Material.Filled.Mic">Test Recording</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-4 pt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+    
+    private MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#6366f1",
+            Secondary = "#ec4899",
+            AppbarBackground = "#ffffff",
+            AppbarText = "#424242"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#818cf8",
+            Secondary = "#f472b6",
+            Background = "#1a1a27",
+            Surface = "#272738",
+            AppbarBackground = "#1a1a27"
+        }
+    };
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    void ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+
+    private async Task Logout()
+    {
+        await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        ((AIInterviewCoach.UI.Auth.CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
+        Navigation.NavigateTo("/");
+    }
+}

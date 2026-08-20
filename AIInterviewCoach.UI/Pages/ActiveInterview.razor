@@ -1,0 +1,105 @@
+@page "/interview/{SessionId:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using AIInterviewCoach.Shared.DTOs
+@using AIInterviewCoach.UI.Components
+
+<PageTitle>Active Interview</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    @if (_session == null || _questions == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_currentQuestionIndex >= _questions.Count)
+    {
+        <MudText Typo="Typo.h5" Class="mb-4">You have completed all questions!</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishInterview">View Results</MudButton>
+    }
+    else
+    {
+        var currentQuestion = _questions[_currentQuestionIndex];
+
+        <MudPaper Elevation="4" Class="pa-6 mb-6">
+            <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Class="mb-2">
+                Question @(_currentQuestionIndex + 1) of @_questions.Count
+            </MudText>
+            <MudText Typo="Typo.h5" Class="mb-6">
+                @currentQuestion.Text
+            </MudText>
+
+            <AudioRecorder InterviewSessionId="SessionId" QuestionId="currentQuestion.Id" OnAnswerSubmitted="HandleAnswerSubmitted" />
+        </MudPaper>
+        
+        @if (_isAnswerSubmitted)
+        {
+            <div class="d-flex justify-end mt-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextQuestion">
+                    @(_currentQuestionIndex == _questions.Count - 1 ? "Finish Interview" : "Next Question")
+                </MudButton>
+            </div>
+        }
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int SessionId { get; set; }
+
+    private InterviewSessionDto? _session;
+    private List<QuestionDto>? _questions;
+    private int _currentQuestionIndex = 0;
+    private bool _isAnswerSubmitted = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _session = await Http.GetFromJsonAsync<InterviewSessionDto>($"InterviewSessions/{SessionId}");
+            
+            if (_session != null)
+            {
+                _questions = await Http.GetFromJsonAsync<List<QuestionDto>>($"Questions/jobRole/{_session.JobRoleId}");
+                
+                if (_session.Answers.Any() && _questions != null)
+                {
+                    var answeredIds = _session.Answers.Select(a => a.QuestionId).ToHashSet();
+                    _currentQuestionIndex = _questions.FindIndex(q => !answeredIds.Contains(q.Id));
+                    if (_currentQuestionIndex == -1) 
+                        _currentQuestionIndex = _questions.Count;
+                }
+            }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Navigation.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading interview: {ex.Message}");
+            Navigation.NavigateTo("/jobroles");
+        }
+    }
+
+    private void HandleAnswerSubmitted(int answerId)
+    {
+        _isAnswerSubmitted = true;
+        StateHasChanged();
+    }
+
+    private void NextQuestion()
+    {
+        _currentQuestionIndex++;
+        _isAnswerSubmitted = false;
+        
+        if (_currentQuestionIndex >= _questions!.Count)
+        {
+            FinishInterview();
+        }
+    }
+
+    private void FinishInterview()
+    {
+        Navigation.NavigateTo($"/results/{SessionId}");
+    }
+}

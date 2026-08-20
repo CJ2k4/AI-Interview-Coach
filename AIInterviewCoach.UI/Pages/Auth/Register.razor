@@ -1,0 +1,60 @@
+@page "/register"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudCard Elevation="3">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center">Register</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+                <MudTextField @bind-Value="registerModel.Email" Label="Email" Variant="Variant.Outlined" Required="true" Class="mb-3"/>
+                <MudTextField @bind-Value="registerModel.Password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" Required="true" Class="mb-3"/>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudText Color="Color.Error" Class="mb-3">@errorMessage</MudText>
+                }
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true">Register</MudButton>
+            </EditForm>
+        </MudCardContent>
+        <MudCardActions Class="d-flex justify-center pb-4">
+            <MudLink Href="/login">Already have an account? Login</MudLink>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private RegisterDto registerModel = new();
+    private string errorMessage = string.Empty;
+
+    private async Task HandleRegister()
+    {
+        errorMessage = string.Empty;
+        var response = await Http.PostAsJsonAsync("Auth/register", registerModel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            try
+            {
+                var errors = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                var errorMessages = new List<string>();
+                foreach (var element in errors.EnumerateArray())
+                {
+                    errorMessages.Add(element.GetProperty("description").GetString()!);
+                }
+                errorMessage = string.Join(" ", errorMessages);
+            }
+            catch
+            {
+                errorMessage = "Registration failed. Ensure password has at least 1 uppercase, 1 number, and 1 special character.";
+            }
+        }
+    }
+}
