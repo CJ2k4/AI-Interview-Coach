@@ -53,10 +53,11 @@ builder.Services.AddAuthorization();
 // Add Application Layer Services
 builder.Services.AddApplicationServices();
 
-// Add Infrastructure Services (Phase 5)
+// Add Infrastructure Services (Phase 5/8)
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<IFileStorageService, AIInterviewCoach.Infrastructure.Services.LocalFileStorageService>();
-builder.Services.AddScoped<ISpeechToTextService, AIInterviewCoach.Infrastructure.Services.MockSpeechToTextService>();
-builder.Services.AddScoped<IAiEvaluationService, AIInterviewCoach.Infrastructure.Services.MockAiEvaluationService>();
+builder.Services.AddScoped<ISpeechToTextService, AIInterviewCoach.Infrastructure.Services.GeminiSpeechToTextService>();
+builder.Services.AddScoped<IAiEvaluationService, AIInterviewCoach.Infrastructure.Services.GeminiEvaluationService>();
 
 // Configure CORS for Blazor UI
 builder.Services.AddCors(options =>

@@ -1,0 +1,177 @@
+@page "/manage-jobroles"
+@attribute [Authorize(Roles = "Mentor,Admin")]
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using AIInterviewCoach.Shared.DTOs
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudText Typo="Typo.h3" Class="mb-6">Manage Job Roles & Questions</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Create Job Role</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField @bind-Value="_newRole.Title" Label="Title" Required="true" Class="mb-3" />
+                    <MudTextField @bind-Value="_newRole.Description" Label="Description" Lines="3" Class="mb-3" />
+                    <MudTextField @bind-Value="_newRole.Requirements" Label="Requirements" Lines="3" Class="mb-3" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateJobRole">Create Role</MudButton>
+                </MudCardContent>
+            </MudCard>
+
+            <MudList T="JobRoleDto" Class="mt-4">
+                <MudListSubheader>Existing Roles</MudListSubheader>
+                @if (_jobRoles != null)
+                {
+                    @foreach (var role in _jobRoles)
+                    {
+                        <MudListItem Value="role" OnClick="() => SelectRole(role)">
+                            <MudText>@role.Title</MudText>
+                        </MudListItem>
+                    }
+                }
+            </MudList>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            @if (_selectedRole != null)
+            {
+                <MudCard Elevation="3" Class="mb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Add Question to: @_selectedRole.Title</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudTextField @bind-Value="_newQuestion.Text" Label="Question Text" Lines="2" Required="true" Class="mb-3" />
+                        <MudTextField @bind-Value="_newQuestion.ExpectedAnswerRubric" Label="Grading Rubric (Instructions for AI)" Lines="4" Required="true" Class="mb-3" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CreateQuestion">Add Question</MudButton>
+                    </MudCardContent>
+                </MudCard>
+
+                <MudText Typo="Typo.h6" Class="mb-2">Existing Questions</MudText>
+                @if (_questions == null)
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+                else if (!_questions.Any())
+                {
+                    <MudText>No questions yet.</MudText>
+                }
+                else
+                {
+                    @foreach (var q in _questions)
+                    {
+                        <MudCard Class="mb-3" Elevation="1">
+                            <MudCardContent>
+                                <MudText Typo="Typo.body1" Class="fw-bold">@q.Text</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">Rubric: @q.ExpectedAnswerRubric</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.h6" Color="Color.Secondary">Select a Job Role to manage its questions.</MudText>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<JobRoleDto>? _jobRoles;
+    private List<QuestionDto>? _questions;
+    private JobRoleDto? _selectedRole;
+    
+    private CreateJobRoleDto _newRole = new();
+    private CreateQuestionDto _newQuestion = new();
+
+    private object? SelectedJobRoleValue { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobRoles();
+    }
+
+    private async Task LoadJobRoles()
+    {
+        try
+        {
+            _jobRoles = await Http.GetFromJsonAsync<List<JobRoleDto>>("JobRoles");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading job roles: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CreateJobRole()
+    {
+        if (string.IsNullOrWhiteSpace(_newRole.Title))
+        {
+            Snackbar.Add("Title is required", Severity.Warning);
+            return;
+        }
+
+        var response = await Http.PostAsJsonAsync("JobRoles", _newRole);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Job Role Created!", Severity.Success);
+            _newRole = new CreateJobRoleDto();
+            await LoadJobRoles();
+        }
+        else
+        {
+            Snackbar.Add("Failed to create job role", Severity.Error);
+        }
+    }
+
+    private async Task SelectRole(JobRoleDto role)
+    {
+        _selectedRole = role;
+        _newQuestion.JobRoleId = role.Id;
+        await LoadQuestions();
+    }
+
+    private async Task LoadQuestions()
+    {
+        if (_selectedRole == null) return;
+
+        try
+        {
+            _questions = await Http.GetFromJsonAsync<List<QuestionDto>>($"Questions/jobRole/{_selectedRole.Id}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading questions: {ex.Message}", Severity.Error);
+            _questions = new List<QuestionDto>();
+        }
+    }
+
+    private async Task CreateQuestion()
+    {
+        if (string.IsNullOrWhiteSpace(_newQuestion.Text) || string.IsNullOrWhiteSpace(_newQuestion.ExpectedAnswerRubric))
+        {
+            Snackbar.Add("Question Text and Rubric are required", Severity.Warning);
+            return;
+        }
+
+        var response = await Http.PostAsJsonAsync("Questions", _newQuestion);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Question Added!", Severity.Success);
+            _newQuestion.Text = "";
+            _newQuestion.ExpectedAnswerRubric = "";
+            await LoadQuestions();
+        }
+        else
+        {
+            Snackbar.Add("Failed to add question", Severity.Error);
+        }
+    }
+}

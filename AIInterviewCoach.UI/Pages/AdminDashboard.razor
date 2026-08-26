@@ -1,0 +1,85 @@
+@page "/admin-dashboard"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudText Typo="Typo.h3" Class="mb-6">Admin Dashboard</MudText>
+
+    <MudCard Elevation="3">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Pending Mentor Approvals</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (_pendingMentors == null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (!_pendingMentors.Any())
+            {
+                <MudText Typo="Typo.body1">No pending mentors to approve.</MudText>
+            }
+            else
+            {
+                <MudTable Items="@_pendingMentors" Hover="true">
+                    <HeaderContent>
+                        <MudTh>User ID</MudTh>
+                        <MudTh>Email</MudTh>
+                        <MudTh>Action</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="User ID">@context.Id</MudTd>
+                        <MudTd DataLabel="Email">@context.Email</MudTd>
+                        <MudTd DataLabel="Action">
+                            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => ApproveMentor(context.Id))">Approve</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private List<PendingMentorDto>? _pendingMentors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPendingMentors();
+    }
+
+    private async Task LoadPendingMentors()
+    {
+        try
+        {
+            _pendingMentors = await Http.GetFromJsonAsync<List<PendingMentorDto>>("Admin/pending-mentors");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading pending mentors: {ex.Message}", Severity.Error);
+            _pendingMentors = new List<PendingMentorDto>();
+        }
+    }
+
+    private async Task ApproveMentor(string userId)
+    {
+        var response = await Http.PostAsync($"Admin/approve-mentor/{userId}", null);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Mentor approved successfully!", Severity.Success);
+            await LoadPendingMentors();
+        }
+        else
+        {
+            Snackbar.Add("Failed to approve mentor.", Severity.Error);
+        }
+    }
+
+    public class PendingMentorDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
+}

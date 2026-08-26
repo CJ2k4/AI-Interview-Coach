@@ -1,0 +1,82 @@
+@page "/mentor-review/{SessionId:int}"
+@attribute [Authorize(Roles = "Mentor")]
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("/mentor-dashboard"))" Class="mb-4">Back to Dashboard</MudButton>
+
+    @if (session == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else
+    {
+        <MudText Typo="Typo.h3" Class="mb-4">Review Session @SessionId</MudText>
+        <MudText Typo="Typo.subtitle1" Class="mb-6">Candidate User ID: @session.UserId</MudText>
+
+        <MudCard Elevation="3" Class="mb-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">AI Feedback</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.body1"><b>Overall Score:</b> @session.Feedback?.OverallScore / 100</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2"><b>AI Comments:</b> @session.Feedback?.AIComments</MudText>
+            </MudCardContent>
+        </MudCard>
+
+        <MudCard Elevation="3">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Mentor Comments</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTextField @bind-Value="mentorComments" Label="Add your manual feedback..." Variant="Variant.Outlined" Lines="5" FullWidth="true" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="SubmitFeedback">Submit Feedback</MudButton>
+            </MudCardActions>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int SessionId { get; set; }
+
+    private InterviewSessionDto? session;
+    private string mentorComments = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        session = await Http.GetFromJsonAsync<InterviewSessionDto>($"InterviewSessions/{SessionId}");
+        if (session != null && session.Feedback != null)
+        {
+            mentorComments = session.Feedback.MentorComments ?? string.Empty;
+        }
+    }
+
+    private async Task SubmitFeedback()
+    {
+        var dto = new AddMentorFeedbackDto
+        {
+            SessionId = SessionId,
+            MentorComments = mentorComments
+        };
+
+        var response = await Http.PostAsJsonAsync("InterviewSessions/feedback", dto);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Feedback submitted successfully!", Severity.Success);
+            Navigation.NavigateTo("/mentor-dashboard");
+        }
+        else
+        {
+            Snackbar.Add("Error submitting feedback.", Severity.Error);
+        }
+    }
+}

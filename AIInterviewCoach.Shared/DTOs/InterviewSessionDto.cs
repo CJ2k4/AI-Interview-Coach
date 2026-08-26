@@ -9,4 +9,5 @@ public class InterviewSessionDto
     public DateTime? EndTime { get; set; }
     public string Status { get; set; } = string.Empty;
     public List<AnswerDto> Answers { get; set; } = new();
+    public FeedbackDto? Feedback { get; set; }
 }

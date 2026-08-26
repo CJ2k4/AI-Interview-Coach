@@ -49,7 +49,26 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         var jsonBytes = ParseBase64WithoutPadding(payload);
         var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
 
-        return keyValuePairs!.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()!));
+        var claims = new List<Claim>();
+        
+        foreach (var kvp in keyValuePairs!)
+        {
+            var claimType = kvp.Key == "role" ? ClaimTypes.Role : kvp.Key;
+            
+            if (kvp.Value is JsonElement element && element.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in element.EnumerateArray())
+                {
+                    claims.Add(new Claim(claimType, item.ToString()));
+                }
+            }
+            else
+            {
+                claims.Add(new Claim(claimType, kvp.Value.ToString()!));
+            }
+        }
+
+        return claims;
     }
 
     private byte[] ParseBase64WithoutPadding(string base64)

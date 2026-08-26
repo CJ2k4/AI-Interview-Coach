@@ -39,4 +39,20 @@ public class InterviewSessionsController : ControllerBase
         var id = await _mediator.Send(new CreateInterviewSessionCommand(dto));
         return Ok(id);
     }
+
+    [HttpGet("completed")]
+    [Authorize(Roles = "Mentor")]
+    public async Task<ActionResult<List<InterviewSessionDto>>> GetAllCompleted()
+    {
+        return await _mediator.Send(new GetAllCompletedSessionsQuery());
+    }
+
+    [HttpPost("feedback")]
+    [Authorize(Roles = "Mentor")]
+    public async Task<ActionResult> AddMentorFeedback(AddMentorFeedbackDto dto)
+    {
+        var result = await _mediator.Send(new AddMentorFeedbackCommand(dto));
+        if (!result) return NotFound();
+        return Ok();
+    }
 }

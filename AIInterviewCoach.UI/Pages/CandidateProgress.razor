@@ -1,0 +1,66 @@
+@page "/candidate-progress"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@using AIInterviewCoach.Shared.DTOs
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudText Typo="Typo.h3" Class="mb-6">My Progress</MudText>
+
+    @if (chartSeries == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (!chartSeries.Any() || !chartSeries[0].Data.Any())
+    {
+        <MudText Typo="Typo.h6">Complete an interview session to see your progress.</MudText>
+    }
+    else
+    {
+        <MudCard Elevation="3" Class="pa-6">
+            <MudChart ChartType="ChartType.Line" ChartSeries="@chartSeries" XAxisLabels="@xAxisLabels" Width="100%" Height="350px" ChartOptions="@chartOptions" />
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    private List<ChartSeries<double>>? chartSeries;
+    private string[]? xAxisLabels;
+    private ChartOptions chartOptions = new ChartOptions();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            var userId = user.FindFirst(c => c.Type == "nameid" || c.Type.Contains("nameidentifier"))?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var sessions = await Http.GetFromJsonAsync<List<InterviewSessionDto>>($"InterviewSessions/user/{userId}");
+                
+                if (sessions != null)
+                {
+                    var completedSessions = sessions
+                        .Where(s => s.Status == "Completed" && s.Feedback != null)
+                        .OrderBy(s => s.EndTime)
+                        .ToList();
+
+                    var data = new double[completedSessions.Count];
+                    xAxisLabels = new string[completedSessions.Count];
+
+                    for (int i = 0; i < completedSessions.Count; i++)
+                    {
+                        data[i] = completedSessions[i].Feedback!.OverallScore;
+                        xAxisLabels[i] = $"Session {completedSessions[i].Id}";
+                    }
+
+                    chartSeries = new List<ChartSeries<double>>()
+                    {
+                        new ChartSeries<double>() { Name = "Overall Score", Data = data }
+                    };
+                }
+            }
+        }
+    }
+}

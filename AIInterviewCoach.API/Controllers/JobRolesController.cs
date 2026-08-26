@@ -25,7 +25,7 @@ public class JobRolesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Mentor,Admin")]
     public async Task<ActionResult<int>> Create(CreateJobRoleDto dto)
     {
         var id = await _mediator.Send(new CreateJobRoleCommand(dto));

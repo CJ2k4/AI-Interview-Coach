@@ -32,8 +32,23 @@
         <MudNavMenu>
             <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             <MudNavLink Href="jobroles" Icon="@Icons.Material.Filled.Work">Job Roles</MudNavLink>
-            <MudNavLink Href="interviews" Icon="@Icons.Material.Filled.VideoCall">My Interviews</MudNavLink>
-            <MudNavLink Href="test-audio" Icon="@Icons.Material.Filled.Mic">Test Recording</MudNavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <MudNavLink Href="interviews" Icon="@Icons.Material.Filled.VideoCall">My Interviews</MudNavLink>
+                    <MudNavLink Href="candidate-progress" Icon="@Icons.Material.Filled.ShowChart">My Progress</MudNavLink>
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="Mentor,Admin">
+                <Authorized>
+                    <MudNavLink Href="mentor-dashboard" Icon="@Icons.Material.Filled.Dashboard">Mentor Dashboard</MudNavLink>
+                    <MudNavLink Href="manage-jobroles" Icon="@Icons.Material.Filled.Build">Manage Job Roles</MudNavLink>
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <MudNavLink Href="admin-dashboard" Icon="@Icons.Material.Filled.AdminPanelSettings">Admin Dashboard</MudNavLink>
+                </Authorized>
+            </AuthorizeView>
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent>

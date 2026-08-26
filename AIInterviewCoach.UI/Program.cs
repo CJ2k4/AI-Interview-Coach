@@ -24,7 +24,7 @@ builder.Services.AddScoped(sp =>
     // For WebAssembly, the inner handler needs to be WebAssemblyHttpMessageHandler
     // but HttpClientHandler is technically mapped to it by default.
     handler.InnerHandler = new HttpClientHandler(); 
-    return new HttpClient(handler) { BaseAddress = new Uri("https://localhost:7229/api/") };
+    return new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5251/api/") };
 });
 
 await builder.Build().RunAsync();

@@ -1,0 +1,50 @@
+@page "/mentor-dashboard"
+@attribute [Authorize(Roles = "Mentor")]
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudText Typo="Typo.h3" Class="mb-6">Mentor Dashboard</MudText>
+
+    @if (sessions == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (!sessions.Any())
+    {
+        <MudText Typo="Typo.h6">No completed sessions available for review.</MudText>
+    }
+    else
+    {
+        <MudTable Items="@sessions" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3">
+            <HeaderContent>
+                <MudTh>Candidate User ID</MudTh>
+                <MudTh>Role ID</MudTh>
+                <MudTh>Completed On</MudTh>
+                <MudTh>Action</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="User ID">@context.UserId</MudTd>
+                <MudTd DataLabel="Role ID">@context.JobRoleId</MudTd>
+                <MudTd DataLabel="Completed On">@context.EndTime?.ToString("g")</MudTd>
+                <MudTd DataLabel="Action">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => ReviewSession(context.Id))">Review</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<InterviewSessionDto>? sessions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        sessions = await Http.GetFromJsonAsync<List<InterviewSessionDto>>("InterviewSessions/completed");
+    }
+
+    private void ReviewSession(int sessionId)
+    {
+        Navigation.NavigateTo($"/mentor-review/{sessionId}");
+    }
+}

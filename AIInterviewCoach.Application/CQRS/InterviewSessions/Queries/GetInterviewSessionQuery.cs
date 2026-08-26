@@ -40,7 +40,13 @@ public class GetInterviewSessionQueryHandler : IRequestHandler<GetInterviewSessi
                 Score = a.Score,
                 AudioUrl = a.AudioUrl,
                 Feedback = a.Feedback
-            }).ToList()
+            }).ToList(),
+            Feedback = session.Feedback != null ? new FeedbackDto
+            {
+                OverallScore = session.Feedback.OverallScore,
+                AIComments = session.Feedback.AIComments,
+                MentorComments = session.Feedback.MentorComments
+            } : null
         };
     }
 }

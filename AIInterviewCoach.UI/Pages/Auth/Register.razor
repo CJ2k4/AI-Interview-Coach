@@ -13,6 +13,7 @@
             <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
                 <MudTextField @bind-Value="registerModel.Email" Label="Email" Variant="Variant.Outlined" Required="true" Class="mb-3"/>
                 <MudTextField @bind-Value="registerModel.Password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" Required="true" Class="mb-3"/>
+                <MudSwitch @bind-Value="registerModel.IsMentor" Color="Color.Secondary" Label="Register as a Mentor" Class="mb-3"/>
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <MudText Color="Color.Error" Class="mb-3">@errorMessage</MudText>

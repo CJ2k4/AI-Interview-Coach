@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject HttpClient Http
 @using AIInterviewCoach.Shared.DTOs
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>My Interviews</PageTitle>
 
@@ -44,8 +45,16 @@ else
     {
         try
         {
-            // Mock user ID for Phase 3 (before auth)
-            _sessions = await Http.GetFromJsonAsync<List<InterviewSessionDto>>("InterviewSessions/user/user1");
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                var userId = user.FindFirst(c => c.Type == "nameid" || c.Type.Contains("nameidentifier"))?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    _sessions = await Http.GetFromJsonAsync<List<InterviewSessionDto>>($"InterviewSessions/user/{userId}");
+                }
+            }
         }
         catch (Exception)
         {

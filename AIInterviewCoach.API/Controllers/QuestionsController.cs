@@ -23,4 +23,12 @@ public class QuestionsController : ControllerBase
     {
         return await _mediator.Send(new GetQuestionsByJobRoleQuery(jobRoleId));
     }
+
+    [HttpPost]
+    [Authorize(Roles = "Mentor,Admin")]
+    public async Task<ActionResult<int>> Create(CreateQuestionDto dto)
+    {
+        var id = await _mediator.Send(new AIInterviewCoach.Application.CQRS.Questions.Commands.CreateQuestionCommand(dto));
+        return Ok(id);
+    }
 }

@@ -5,21 +5,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AIInterviewCoach.Application.CQRS.InterviewSessions.Queries;
 
-public record GetInterviewSessionsQuery(string UserId) : IRequest<List<InterviewSessionDto>>;
+public record GetAllCompletedSessionsQuery() : IRequest<List<InterviewSessionDto>>;
 
-public class GetInterviewSessionsQueryHandler : IRequestHandler<GetInterviewSessionsQuery, List<InterviewSessionDto>>
+public class GetAllCompletedSessionsQueryHandler : IRequestHandler<GetAllCompletedSessionsQuery, List<InterviewSessionDto>>
 {
     private readonly IApplicationDbContext _context;
 
-    public GetInterviewSessionsQueryHandler(IApplicationDbContext context)
+    public GetAllCompletedSessionsQueryHandler(IApplicationDbContext context)
     {
         _context = context;
     }
 
-    public async Task<List<InterviewSessionDto>> Handle(GetInterviewSessionsQuery request, CancellationToken cancellationToken)
+    public async Task<List<InterviewSessionDto>> Handle(GetAllCompletedSessionsQuery request, CancellationToken cancellationToken)
     {
         return await _context.InterviewSessions
-            .Where(s => s.UserId == request.UserId)
+            .Where(s => s.Status == "Completed")
+            .Include(s => s.Feedback)
             .Select(s => new InterviewSessionDto
             {
                 Id = s.Id,
@@ -35,6 +36,7 @@ public class GetInterviewSessionsQueryHandler : IRequestHandler<GetInterviewSess
                     MentorComments = s.Feedback.MentorComments
                 } : null
             })
+            .OrderByDescending(s => s.EndTime)
             .ToListAsync(cancellationToken);
     }
 }
