@@ -17,6 +17,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<InterviewSession> InterviewSessions { get; set; }
     public DbSet<Answer> Answers { get; set; }
     public DbSet<Feedback> Feedbacks { get; set; }
+    // Configure entity relationships and database mappings here.
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
