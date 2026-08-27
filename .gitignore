@@ -46,5 +46,6 @@ Generated\ Files/
 {}.tmp
 
 implementation_plan.md
-PROJECT_WALKTHROUGH.mdAIInterviewCoach.API/wwwroot/uploads/
+PROJECT_WALKTHROUGH.md
+AIInterviewCoach.API/wwwroot/uploads/
 AIInterviewCoach.API/app.db*
