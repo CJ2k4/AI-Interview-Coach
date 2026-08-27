@@ -59,6 +59,12 @@
             
             if (_session != null)
             {
+                if (_session.Status == "Completed")
+                {
+                    Navigation.NavigateTo($"/results/{SessionId}");
+                    return;
+                }
+
                 _questions = await Http.GetFromJsonAsync<List<QuestionDto>>($"Questions/jobRole/{_session.JobRoleId}");
                 
                 if (_session.Answers.Any() && _questions != null)
@@ -87,19 +93,28 @@
         StateHasChanged();
     }
 
-    private void NextQuestion()
+    private async Task NextQuestion()
     {
         _currentQuestionIndex++;
         _isAnswerSubmitted = false;
         
         if (_currentQuestionIndex >= _questions!.Count)
         {
-            FinishInterview();
+            await FinishInterview();
         }
     }
 
-    private void FinishInterview()
+    private async Task FinishInterview()
     {
+        try 
+        {
+            await Http.PostAsync($"InterviewSessions/{SessionId}/finish", null);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error finishing interview: {ex.Message}");
+        }
+        
         Navigation.NavigateTo($"/results/{SessionId}");
     }
 }

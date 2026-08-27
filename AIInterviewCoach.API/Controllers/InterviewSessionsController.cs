@@ -55,4 +55,12 @@ public class InterviewSessionsController : ControllerBase
         if (!result) return NotFound();
         return Ok();
     }
+
+    [HttpPost("{id}/finish")]
+    public async Task<ActionResult> FinishSession(int id)
+    {
+        var result = await _mediator.Send(new FinishInterviewSessionCommand(id));
+        if (!result) return NotFound();
+        return Ok();
+    }
 }

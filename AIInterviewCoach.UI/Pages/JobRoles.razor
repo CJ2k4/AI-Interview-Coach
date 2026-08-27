@@ -34,7 +34,21 @@ else
                         <MudText Typo="Typo.body2">@role.Requirements</MudText>
                     </MudCardContent>
                     <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => StartInterview(role.Id)">Start Interview</MudButton>
+                        @{
+                            var session = _userSessions?.FirstOrDefault(s => s.JobRoleId == role.Id);
+                        }
+                        @if (session == null)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="() => StartInterview(role.Id)">Start Interview</MudButton>
+                        }
+                        else if (session.Status == "Completed")
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Success" OnClick="@(() => Navigation.NavigateTo($"/results/{session.Id}"))">View Results</MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Warning" OnClick="@(() => Navigation.NavigateTo($"/interview/{session.Id}"))">Resume Interview</MudButton>
+                        }
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -53,12 +67,24 @@ else
 
 @code {
     private List<JobRoleDto>? _jobRoles;
+    private List<InterviewSessionDto>? _userSessions;
 
     protected override async Task OnInitializedAsync()
     {
         try 
         {
             _jobRoles = await Http.GetFromJsonAsync<List<JobRoleDto>>("JobRoles");
+
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                var userId = user.FindFirst(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier || c.Type == "nameid")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    _userSessions = await Http.GetFromJsonAsync<List<InterviewSessionDto>>($"InterviewSessions/user/{userId}");
+                }
+            }
         }
         catch (Exception)
         {

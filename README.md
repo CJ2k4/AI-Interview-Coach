@@ -1,77 +1,69 @@
-# 🎤 AI Interview Coach
+# AI Interview Coach
 
-Welcome to **AI Interview Coach**, an interactive web application designed to help candidates practice their interview skills with real-time feedback powered by Google's Gemini AI. The platform features an interactive Voice UI for candidates and a complete management dashboard for Mentors/Admins.
+AI Interview Coach is a comprehensive, modern web application designed to help candidates practice and improve their interview skills through AI-driven audio interviews, while allowing mentors and admins to manage content and provide personalized feedback.
 
-## 🚀 Tech Stack
-- **Frontend**: Blazor WebAssembly (.NET 10), MudBlazor UI Library
-- **Backend**: ASP.NET Core Web API (.NET 10)
-- **Database**: Entity Framework Core with SQLite
-- **AI Integration**: Google Generative Language API (Gemini 3.5 Flash)
+Built with a **.NET 10 Web API** (using Clean Architecture and CQRS) on the backend and a **Blazor WebAssembly** (MudBlazor) application on the frontend, this project integrates directly with Google's Gemini AI to transcribe audio responses and evaluate them against custom grading rubrics.
 
----
+## 🚀 Key Features
 
-## 🛠️ Prerequisites
-Before you begin, ensure you have the following installed on your local machine:
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- A valid [Google Gemini API Key](https://aistudio.google.com/app/apikey)
+### For Candidates
+*   **Audio-Based Interviews**: Start an interview for specific job roles. Record your answers using your microphone directly in the browser.
+*   **Instant AI Evaluation**: Upon finishing the interview, your audio is transcribed using Gemini's multimodal capabilities, and an AI agent evaluates your answers against a predefined grading rubric.
+*   **Detailed Results & Feedback**: View your overall interview score and drill down into each question to read the transcription, the exact score received, and constructive AI feedback on how to improve.
+*   **Progress Tracking**: A dedicated "My Progress" dashboard automatically visualizes your overall interview scores over time on a line chart so you can track your improvement.
+*   **Resume Capability**: Interviews are robust—you can safely pause or accidentally close your tab, and later hit "Resume Interview" to pick up exactly where you left off.
 
----
+### For Mentors
+*   **Mentor Dashboard**: Review a feed of all completed candidate interviews.
+*   **Manual Reviews**: Drill into specific sessions to review the AI's transcriptions, scores, and feedback.
+*   **Add Mentor Feedback**: Provide human-in-the-loop feedback to override or supplement the AI's grading, leaving specific personalized comments for the candidate.
 
-## 🏃‍♂️ Getting Started (Local Development)
+### For Administrators
+*   **Job Role Management**: Create and manage job roles (e.g., Frontend Developer, Backend Developer), including descriptions and requirements.
+*   **Question Bank Management**: Add specific questions to each job role.
+*   **Custom Grading Rubrics**: For every question, define a specific "Expected Answer Rubric" that guides the AI on exactly what to listen for and how strictly to grade the answer.
+*   **User Management**: Approve pending mentor registrations from the Admin Dashboard to grant them access to candidate reviews.
 
-Follow these steps to clone the project, configure your secrets, and run it locally.
+## 🛠 Tech Stack
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/CJ2k4/AI-Interview-Coach.git
-cd AI-Interview-Coach
-```
+**Frontend (Client)**
+*   Blazor WebAssembly (.NET 10)
+*   MudBlazor Component Library (Material Design)
+*   Browser MediaRecorder API for audio capture
 
-### 2. Configure Your API Key
-We use .NET User Secrets to securely store API keys so they are never committed to GitHub.
+**Backend (Server)**
+*   ASP.NET Core Web API (.NET 10)
+*   Clean Architecture (Domain, Application, Infrastructure, API layers)
+*   MediatR for CQRS (Command Query Responsibility Segregation) pattern
+*   Entity Framework Core (SQLite for easy development)
+*   ASP.NET Core Identity for Authentication & JWT tokens
 
-Navigate to the API folder and set your Google Gemini API key:
-```bash
-cd AIInterviewCoach.API
-dotnet user-secrets init
-dotnet user-secrets set "Gemini:ApiKey" "YOUR_API_KEY_HERE"
-```
+**AI & Integrations**
+*   **Gemini AI Multimodal**: `GeminiSpeechToTextService` to accurately transcribe candidate audio responses.
+*   **Gemini AI LLM**: `GeminiEvaluationService` to prompt the LLM to act as a harsh but fair interviewer, parsing transcripts and rubrics into structured JSON scores.
+*   **Local File Storage**: Saves audio blobs to the server for processing and later mentor review.
 
-### 3. Setup the Database
-Since the SQLite `.db` file is ignored by Git, you'll need to create the database using the existing Entity Framework migrations. Ensure you are still in the `AIInterviewCoach.API` directory:
-```bash
-# If you don't have the EF Core tools installed globally, run this first:
-# dotnet tool install --global dotnet-ef
+## 🏃 Getting Started
 
-dotnet ef database update --project ../AIInterviewCoach.Infrastructure --startup-project .
-```
+### Prerequisites
+*   .NET 10 SDK
+*   A Gemini API Key (Add to `appsettings.json` under `GeminiSettings:ApiKey`)
 
-### 4. Run the Backend API
-Start the backend server (still inside the `AIInterviewCoach.API` folder):
-```bash
-dotnet run
-```
-The API will start listening on `http://localhost:5251`.
+### Running the Application
 
-### 5. Run the Blazor Frontend UI
-Open a **new terminal window**, navigate to the UI project, and start the frontend:
-```bash
-cd AIInterviewCoach.UI
-dotnet run
-```
-The UI will start listening on `http://localhost:5246`. Open this URL in your web browser!
+1. **Start the API Server**:
+   ```bash
+   cd AIInterviewCoach.API
+   dotnet run
+   ```
+2. **Start the Blazor UI**:
+   ```bash
+   cd AIInterviewCoach.UI
+   dotnet run
+   ```
+3. Open your browser to `http://localhost:5246`.
 
----
-
-## 🛡️ Admin & Mentor Workflow
-
-By default, creating an account with "Is Mentor" checked will place the user in a **Pending** state. They must be approved by an Admin to access mentor privileges.
-
-### How to seed an Admin account:
-1. Ensure both the API and UI are running.
-2. Open your browser and navigate directly to:
-   `http://localhost:5251/api/Auth/seed-admin`
-3. This will instantly create an Admin account with:
-   - **Email:** `admin@admin.com`
-   - **Password:** `Admin@123`
-4. Log into the UI using this account to access the **Admin Dashboard**, where you can approve pending Mentors!
+### Default Accounts
+*   **Admin Seeder**: Navigate to `http://localhost:5251/api/Auth/seed-admin` in your browser to generate the default admin account:
+    *   Email: `admin@admin.com`
+    *   Password: `Admin@123`

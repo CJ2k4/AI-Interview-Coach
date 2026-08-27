@@ -3,6 +3,7 @@ using MediatR;
 using AIInterviewCoach.Application.Interfaces;
 using AIInterviewCoach.Domain.Entities;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace AIInterviewCoach.Application.CQRS.InterviewSessions.Commands;
 
@@ -28,6 +29,14 @@ public class CreateInterviewSessionCommandHandler : IRequestHandler<CreateInterv
 
     public async Task<int> Handle(CreateInterviewSessionCommand request, CancellationToken cancellationToken)
     {
+        var existingSession = await _context.InterviewSessions
+            .FirstOrDefaultAsync(s => s.UserId == request.Dto.UserId && s.JobRoleId == request.Dto.JobRoleId, cancellationToken);
+
+        if (existingSession != null)
+        {
+            return existingSession.Id;
+        }
+
         var entity = new InterviewSession
         {
             UserId = request.Dto.UserId,

@@ -30,36 +30,50 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        if (user.Identity != null && user.Identity.IsAuthenticated)
+        try
         {
-            var userId = user.FindFirst(c => c.Type == "nameid" || c.Type.Contains("nameidentifier"))?.Value;
-            if (!string.IsNullOrEmpty(userId))
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
             {
-                var sessions = await Http.GetFromJsonAsync<List<InterviewSessionDto>>($"InterviewSessions/user/{userId}");
-                
-                if (sessions != null)
+                var userId = user.FindFirst(c => c.Type == "nameid" || c.Type.Contains("nameidentifier"))?.Value;
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    var completedSessions = sessions
-                        .Where(s => s.Status == "Completed" && s.Feedback != null)
-                        .OrderBy(s => s.EndTime)
-                        .ToList();
-
-                    var data = new double[completedSessions.Count];
-                    xAxisLabels = new string[completedSessions.Count];
-
-                    for (int i = 0; i < completedSessions.Count; i++)
+                    var sessions = await Http.GetFromJsonAsync<List<InterviewSessionDto>>($"InterviewSessions/user/{userId}");
+                    
+                    if (sessions != null)
                     {
-                        data[i] = completedSessions[i].Feedback!.OverallScore;
-                        xAxisLabels[i] = $"Session {completedSessions[i].Id}";
+                        var completedSessions = sessions
+                            .Where(s => s.Status == "Completed" && s.Feedback != null)
+                            .OrderBy(s => s.EndTime)
+                            .ToList();
+
+                        var data = new double[completedSessions.Count];
+                        xAxisLabels = new string[completedSessions.Count];
+
+                        for (int i = 0; i < completedSessions.Count; i++)
+                        {
+                            data[i] = completedSessions[i].Feedback!.OverallScore;
+                            xAxisLabels[i] = $"Session {completedSessions[i].Id}";
+                        }
+
+                        chartSeries = new List<ChartSeries<double>>()
+                        {
+                            new ChartSeries<double>() { Name = "Overall Score", Data = data }
+                        };
                     }
-
-                    chartSeries = new List<ChartSeries<double>>()
-                    {
-                        new ChartSeries<double>() { Name = "Overall Score", Data = data }
-                    };
                 }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading progress: {ex.Message}");
+        }
+        finally
+        {
+            if (chartSeries == null)
+            {
+                chartSeries = new List<ChartSeries<double>>();
             }
         }
     }
