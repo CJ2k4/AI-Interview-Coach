@@ -53,7 +53,12 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         
         foreach (var kvp in keyValuePairs!)
         {
-            var claimType = kvp.Key == "role" ? ClaimTypes.Role : kvp.Key;
+            var claimType = kvp.Key switch
+{
+    "role" => ClaimTypes.Role,
+    "unique_name" => ClaimTypes.Name,
+    _ => kvp.Key
+};
             
             if (kvp.Value is JsonElement element && element.ValueKind == JsonValueKind.Array)
             {
